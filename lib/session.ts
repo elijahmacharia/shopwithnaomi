@@ -2,8 +2,9 @@ import { createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import type { RoleName } from "@prisma/client";
 import { prisma } from "./db";
+import { SESSION_COOKIE } from "./session-cookie";
 
-export const SESSION_COOKIE = "naome_session";
+export { SESSION_COOKIE };
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 14;
 
 export type SessionUser = {
