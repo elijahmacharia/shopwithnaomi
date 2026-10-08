@@ -1,9 +1,15 @@
 import Link from "next/link";
+import { DatabaseSetup } from "@/components/database-setup";
 import { ProductCard } from "@/components/shop/product-card";
+import { readStorefront } from "@/lib/read-storefront";
 import { listPublicProducts } from "@/services/catalog";
 
 export default async function HomePage() {
-  const { products } = await listPublicProducts({});
+  const result = await readStorefront(() => listPublicProducts({}));
+  if (!result.ok) {
+    return <DatabaseSetup problem={result.problem} />;
+  }
+  const { products } = result.data;
   return (
     <div className="grid gap-10">
       <section className="rounded-md bg-brand-primary px-6 py-12 sm:px-10">

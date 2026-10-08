@@ -1,20 +1,26 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DatabaseSetup } from "@/components/database-setup";
 import { ProductActions } from "@/components/shop/product-actions";
 import { formatKsh, parseMoneyToCents } from "@/lib/domain/money";
+import { readStorefront } from "@/lib/read-storefront";
 import { getPublicProduct } from "@/services/catalog";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const product = await getPublicProduct((await params).slug);
-  if (!product) {
+  const result = await readStorefront(async () => getPublicProduct((await params).slug));
+  if (!result.ok || !result.data) {
     return { title: "Product" };
   }
-  return { title: product.name, description: product.description };
+  return { title: result.data.name, description: result.data.description };
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
-  const product = await getPublicProduct((await params).slug);
+  const result = await readStorefront(async () => getPublicProduct((await params).slug));
+  if (!result.ok) {
+    return <DatabaseSetup problem={result.problem} />;
+  }
+  const product = result.data;
   if (!product) {
     notFound();
   }

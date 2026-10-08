@@ -1,4 +1,6 @@
+import { DatabaseSetup } from "@/components/database-setup";
 import { ProductCard } from "@/components/shop/product-card";
+import { readStorefront } from "@/lib/read-storefront";
 import { listCategories, listPublicProducts } from "@/services/catalog";
 import Link from "next/link";
 
@@ -6,10 +8,11 @@ export const metadata = { title: "Shop" };
 
 export default async function ShopPage({ searchParams }: { searchParams: Promise<{ q?: string; category?: string; page?: string }> }) {
   const params = await searchParams;
-  const [{ products, total, page }, categories] = await Promise.all([
-    listPublicProducts(params),
-    listCategories(),
-  ]);
+  const result = await readStorefront(() => Promise.all([listPublicProducts(params), listCategories()]));
+  if (!result.ok) {
+    return <DatabaseSetup problem={result.problem} />;
+  }
+  const [{ products, total, page }, categories] = result.data;
   return (
     <div className="grid gap-6">
       <div>

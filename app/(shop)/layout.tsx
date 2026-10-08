@@ -1,10 +1,16 @@
+import { DatabaseSetup } from "@/components/database-setup";
 import { SiteHeader } from "@/components/shop/site-header";
 import { StoreProvider } from "@/components/shop/store-provider";
 import { WhatsappButton } from "@/components/shop/whatsapp-button";
+import { readStorefront } from "@/lib/read-storefront";
 import { getSettings, getWhatsappNumber } from "@/services/settings";
 
 export default async function ShopLayout({ children }: { children: React.ReactNode }) {
-  const [settings, whatsapp] = await Promise.all([getSettings(), getWhatsappNumber()]);
+  const shell = await readStorefront(() => Promise.all([getSettings(), getWhatsappNumber()]));
+  if (!shell.ok) {
+    return <DatabaseSetup problem={shell.problem} />;
+  }
+  const [settings, whatsapp] = shell.data;
   return (
     <StoreProvider>
       <SiteHeader />

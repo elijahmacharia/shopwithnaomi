@@ -1,9 +1,15 @@
+import { DatabaseSetup } from "@/components/database-setup";
+import { readStorefront } from "@/lib/read-storefront";
 import { getSettings } from "@/services/settings";
 
 export const metadata = { title: "About" };
 
 export default async function AboutPage() {
-  const settings = await getSettings();
+  const result = await readStorefront(() => getSettings());
+  if (!result.ok) {
+    return <DatabaseSetup problem={result.problem} />;
+  }
+  const settings = result.data;
   return (
     <article className="max-w-2xl">
       <h1 className="font-display text-3xl">About {settings.businessName}</h1>

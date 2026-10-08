@@ -1,10 +1,16 @@
 import { ContactForm } from "@/components/shop/contact-form";
+import { DatabaseSetup } from "@/components/database-setup";
+import { readStorefront } from "@/lib/read-storefront";
 import { getSettings } from "@/services/settings";
 
 export const metadata = { title: "Contact" };
 
 export default async function ContactPage() {
-  const settings = await getSettings();
+  const result = await readStorefront(() => getSettings());
+  if (!result.ok) {
+    return <DatabaseSetup problem={result.problem} />;
+  }
+  const settings = result.data;
   return (
     <div className="grid gap-6">
       <div>
