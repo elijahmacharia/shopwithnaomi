@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { toUserMessage } from "@/lib/errors";
 import { reviewDamage, reviewPriceRequest, createDamageReport, createPriceRequest } from "@/services/approvals";
-import { archiveProduct, createCategory, createProduct, updateProduct } from "@/services/catalog";
+import { archiveCategory, archiveProduct, createCategory, createProduct, updateProduct } from "@/services/catalog";
 import { recordCreditPayment } from "@/services/credit";
 import { saveCustomer } from "@/services/customers";
 import { archiveExpense, createExpense, updateExpense } from "@/services/expenses";
@@ -75,6 +75,16 @@ export async function categoryAction(formData: FormData) {
     redirect(`/admin/products?error=${encodeURIComponent(toUserMessage(error))}`);
   }
   redirect("/admin/products?notice=Category added.");
+}
+
+export async function archiveCategoryAction(formData: FormData) {
+  try {
+    await archiveCategory(String(formData.get("id")));
+  } catch (error) {
+    unstable_rethrow(error);
+    redirect(`/admin/products?error=${encodeURIComponent(toUserMessage(error))}`);
+  }
+  redirect("/admin/products?notice=Category archived.");
 }
 
 export async function stockAction(formData: FormData) {
@@ -252,17 +262,23 @@ export async function settingsAction(formData: FormData) {
 }
 
 export async function customerAction(formData: FormData) {
-  await saveCustomer(
-    {
-      name: formData.get("name"),
-      phone: formData.get("phone"),
-      email: formData.get("email"),
-      address: formData.get("address"),
-      landmark: formData.get("landmark"),
-    },
-    String(formData.get("id") ?? "") || undefined,
-  );
-  redirect("/admin/customers?notice=Customer saved.");
+  const id = String(formData.get("id") ?? "") || undefined;
+  try {
+    await saveCustomer(
+      {
+        name: formData.get("name"),
+        phone: formData.get("phone"),
+        email: formData.get("email"),
+        address: formData.get("address"),
+        landmark: formData.get("landmark"),
+      },
+      id,
+    );
+  } catch (error) {
+    unstable_rethrow(error);
+    redirect(`${id ? `/admin/customers/${id}` : "/admin/customers"}?error=${encodeURIComponent(toUserMessage(error))}`);
+  }
+  redirect(id ? `/admin/customers/${id}?notice=Customer saved.` : "/admin/customers?notice=Customer saved.");
 }
 
 export async function profileAction(formData: FormData) {

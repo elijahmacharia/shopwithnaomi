@@ -184,7 +184,7 @@ export async function listOrders(query: { page?: string; q?: string; status?: st
     prisma.order.count({ where }),
     prisma.order.findMany({
       where,
-      include: { customer: true },
+      include: { customer: true, items: { include: { product: true } } },
       orderBy: { createdAt: "desc" },
       skip: paging.skip,
       take: paging.take,
@@ -202,6 +202,14 @@ export async function listOrders(query: { page?: string; q?: string; status?: st
       total: centsToDecimalString(decimalToCents(order.total)),
       createdAt: order.createdAt,
       deliveryMethod: order.deliveryMethod,
+      address: order.deliveryAddress,
+      landmark: order.landmark,
+      notes: order.notes,
+      items: order.items.map((item) => ({
+        name: item.product.name,
+        quantity: item.quantity,
+        subtotal: centsToDecimalString(decimalToCents(item.subtotal)),
+      })),
     })),
   };
 }
