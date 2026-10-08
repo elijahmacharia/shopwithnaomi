@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Pager } from "@/components/pager";
 import { paymentMethodLabel, paymentStatusLabel } from "@/lib/labels";
 import { listSales } from "@/services/sales";
 
@@ -35,6 +36,7 @@ export default async function AdminSalesPage({ searchParams }: { searchParams: P
           </tbody>
         </table>
       </div>
+      <Pager page={data.page} total={data.total} pageSize={data.pageSize} path="/admin/sales" query={{ q: params.q, method: params.method, status: params.status }} />
     </div>
   );
 }

@@ -6,11 +6,31 @@ import { grossProfitCents, netProfitCents } from "@/lib/domain/profit";
 
 function range(from?: string, to?: string) {
   const end = to ? new Date(to) : new Date();
+  if (to && /^\d{4}-\d{2}-\d{2}$/.test(to)) {
+    end.setHours(23, 59, 59, 999);
+  }
   const start = from ? new Date(from) : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
     throw new Error("Choose a valid date range.");
   }
   return { start, end };
+}
+
+export function reportWindow(query: { preset?: string; from?: string; to?: string }) {
+  if (query.preset === "today" || query.preset === "week" || query.preset === "month") {
+    const end = new Date();
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    if (query.preset === "week") {
+      const day = start.getDay();
+      start.setDate(start.getDate() - (day === 0 ? 6 : day - 1));
+    }
+    if (query.preset === "month") {
+      start.setDate(1);
+    }
+    return { start, end };
+  }
+  return range(query.from, query.to);
 }
 
 async function totals(start: Date, end: Date) {
@@ -37,9 +57,9 @@ async function totals(start: Date, end: Date) {
   };
 }
 
-export async function profitReport(query: { from?: string; to?: string }) {
+export async function profitReport(query: { from?: string; to?: string; preset?: string }) {
   await requireUser(["OWNER"], "profit");
-  const { start, end } = range(query.from, query.to);
+  const { start, end } = reportWindow(query);
   const result = await totals(start, end);
   return {
     from: start,
@@ -148,6 +168,55 @@ export async function employeeDashboard() {
       total: centsToDecimalString(decimalToCents(sale.total)),
       customer: sale.customer?.name ?? "Walk-in",
       createdAt: sale.createdAt,
+    })),
+  };
+}
+
+export async function shopReports(query: { preset?: string; from?: string; to?: string }) {
+  await requireUser(["OWNER"], "reports");
+  const { start, end } = reportWindow(query);
+  const created = { gte: start, lte: end };
+  const [profit, payments, credit, damage, prices, orders, low, discrepancies, staff] = await Promise.all([
+    totals(start, end),
+    prisma.payment.groupBy({ by: ["method"], where: { createdAt: created }, _sum: { amount: true }, _count: { _all: true } }),
+    prisma.creditRecord.aggregate({ _sum: { balance: true }, _count: { _all: true }, where: { status: { in: ["UNPAID", "PARTIALLY_PAID", "OVERDUE"] } } }),
+    prisma.damageReport.groupBy({ by: ["status"], where: { createdAt: created }, _count: { _all: true } }),
+    prisma.priceChangeRequest.count({ where: { createdAt: created } }),
+    prisma.order.groupBy({ by: ["status"], where: { createdAt: created }, _count: { _all: true } }),
+    prisma.$queryRaw<Array<{ count: number }>>(Prisma.sql`
+      SELECT COUNT(*)::int AS count FROM "Product"
+      WHERE "archivedAt" IS NULL AND "stockQuantity" <= "minimumStock"
+    `),
+    prisma.stockTakeItem.count({ where: { difference: { not: 0 }, stockTake: { createdAt: created } } }),
+    prisma.sale.groupBy({ by: ["employeeId"], where: { createdAt: created }, _count: { _all: true }, _sum: { total: true } }),
+  ]);
+  const people = await prisma.user.findMany({ where: { id: { in: staff.map((row) => row.employeeId) } } });
+  const names = new Map(people.map((person) => [person.id, person.name]));
+  return {
+    from: start,
+    to: end,
+    revenue: centsToDecimalString(profit.revenue),
+    cogs: centsToDecimalString(profit.cogs),
+    expenses: centsToDecimalString(profit.expenses),
+    gross: centsToDecimalString(profit.gross),
+    net: centsToDecimalString(profit.net),
+    transactions: profit.transactions,
+    payments: payments.map((row) => ({
+      method: row.method,
+      count: row._count._all,
+      amount: centsToDecimalString(row._sum.amount ? decimalToCents(row._sum.amount) : 0),
+    })),
+    creditBalance: centsToDecimalString(credit._sum.balance ? decimalToCents(credit._sum.balance) : 0),
+    openCredit: credit._count._all,
+    damage: damage.map((row) => ({ status: row.status, count: row._count._all })),
+    priceChanges: prices,
+    orders: orders.map((row) => ({ status: row.status, count: row._count._all })),
+    lowStock: low[0]?.count ?? 0,
+    discrepancies: discrepancies,
+    employees: staff.map((row) => ({
+      name: names.get(row.employeeId) ?? "Employee",
+      sales: row._count._all,
+      total: centsToDecimalString(row._sum.total ? decimalToCents(row._sum.total) : 0),
     })),
   };
 }

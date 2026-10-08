@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { archiveProductAction, categoryAction, saveProductAction } from "@/actions/ops";
+import { archiveCategoryAction, archiveProductAction, categoryAction, saveProductAction } from "@/actions/ops";
+import { ConfirmSubmit } from "@/components/confirm-submit";
 import { Notice } from "@/components/notice";
+import { Pager } from "@/components/pager";
 import { listCategories, listOwnerProducts } from "@/services/catalog";
 
 export const metadata = { title: "Products" };
 
-export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ error?: string; notice?: string; q?: string }> }) {
+export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ error?: string; notice?: string; q?: string; page?: string }> }) {
   const params = await searchParams;
   const [data, categories] = await Promise.all([listOwnerProducts(params), listCategories()]);
   return (
@@ -25,12 +27,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                 <td>KSh {product.costPrice}</td>
                 <td>{product.stockQuantity}</td>
                 <td>{product.margin}%</td>
-                <td>{!product.archived && <form action={archiveProductAction}><input type="hidden" name="id" value={product.id} /><button className="min-h-11 text-sm">Archive</button></form>}</td>
+                <td>{!product.archived && <ConfirmSubmit action={archiveProductAction} id={product.id} label="Archive" message={`Are you sure you want to archive ${product.name}?`} />}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      <Pager page={data.page} total={data.total} pageSize={data.pageSize} path="/admin/products" query={{ q: params.q }} />
       <form action={saveProductAction} className="grid gap-3 rounded-md bg-white p-4 md:grid-cols-2">
         <h2 className="font-display text-2xl md:col-span-2">Add product</h2>
         <input name="name" required placeholder="Name" aria-label="Name" className="min-h-11 rounded-md border px-3" />
@@ -45,10 +48,21 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         <label className="flex items-center gap-2"><input type="checkbox" name="isActive" defaultChecked /> Active</label>
         <button className="min-h-11 rounded-md bg-brand-ink font-semibold text-white">Add product</button>
       </form>
-      <form action={categoryAction} className="flex flex-wrap gap-2">
-        <input name="name" required placeholder="New category" aria-label="Category name" className="min-h-11 rounded-md border px-3" />
-        <button className="min-h-11 rounded-md border px-4">Add category</button>
-      </form>
+      <section className="grid gap-3">
+        <h2 className="font-display text-2xl">Categories</h2>
+        <ul className="divide-y rounded-md border bg-white">
+          {categories.map((category) => (
+            <li key={category.id} className="flex items-center justify-between gap-3 px-4 py-2">
+              <span>{category.name}</span>
+              <ConfirmSubmit action={archiveCategoryAction} id={category.id} label="Archive" message={`Archive the ${category.name} category? Products in it must already be archived.`} />
+            </li>
+          ))}
+        </ul>
+        <form action={categoryAction} className="flex flex-wrap gap-2">
+          <input name="name" required placeholder="New category" aria-label="Category name" className="min-h-11 rounded-md border px-3" />
+          <button className="min-h-11 rounded-md border px-4">Add category</button>
+        </form>
+      </section>
     </div>
   );
 }

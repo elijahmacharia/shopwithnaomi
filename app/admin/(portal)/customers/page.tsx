@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { customerAction } from "@/actions/ops";
 import { Notice } from "@/components/notice";
+import { Pager } from "@/components/pager";
 import { listCustomers } from "@/services/customers";
 
 export const metadata = { title: "Customers" };
@@ -13,8 +15,15 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       <Notice error={params.error} notice={params.notice} />
       <form className="flex gap-2"><input name="q" defaultValue={params.q} aria-label="Search customers" className="min-h-11 flex-1 rounded-md border px-3" /><button className="min-h-11 rounded-md bg-brand-ink px-4 text-white">Search</button></form>
       <ul className="divide-y rounded-md border bg-white">
-        {data.customers.map((customer) => <li key={customer.id} className="px-4 py-3">{customer.name} · {customer.phone} · {customer.purchases} purchases · credit KSh {customer.credit}</li>)}
+        {data.customers.length === 0 && <li className="px-4 py-6">No customers yet.</li>}
+        {data.customers.map((customer) => (
+          <li key={customer.id} className="px-4 py-3">
+            <Link href={`/admin/customers/${customer.id}`} className="font-semibold">{customer.name}</Link>
+            <span> · {customer.phone} · {customer.purchases} purchases · credit KSh {customer.credit}</span>
+          </li>
+        ))}
       </ul>
+      <Pager page={data.page} total={data.total} pageSize={data.pageSize} path="/admin/customers" query={{ q: params.q }} />
       <form action={customerAction} className="grid gap-2 rounded-md bg-white p-4 sm:grid-cols-2">
         <input name="name" required placeholder="Name" aria-label="Name" className="min-h-11 rounded-md border px-3" />
         <input name="phone" required placeholder="Phone" aria-label="Phone" className="min-h-11 rounded-md border px-3" />

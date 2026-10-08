@@ -12,7 +12,13 @@ export default async function DeliveriesPage() {
       <p className="mt-2 text-sm text-brand-muted">Manual delivery tracking. Driver assignment and maps can be added later.</p>
       <ul className="mt-4 divide-y rounded-md border bg-white">
         {deliveries.length === 0 && <li className="px-4 py-6">No deliveries yet.</li>}
-        {deliveries.map((order) => <li key={order.id} className="px-4 py-3">{order.orderNumber} · {order.customer} · {order.phone} · {orderStatusLabel[order.status]}</li>)}
+        {deliveries.map((order) => (
+          <li key={order.id} className="px-4 py-3">
+            <p className="font-semibold">{order.orderNumber} · {order.customer} · {order.phone}</p>
+            <p>{order.address || "No address"}{order.landmark ? ` · ${order.landmark}` : ""} · {orderStatusLabel[order.status]}</p>
+            {order.notes && <p className="text-sm">{order.notes}</p>}
+          </li>
+        ))}
       </ul>
     </div>
   );

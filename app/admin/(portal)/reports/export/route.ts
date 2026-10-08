@@ -10,7 +10,8 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const from = url.searchParams.get("from") ?? undefined;
   const to = url.searchParams.get("to") ?? undefined;
-  const report = await profitReport({ from, to });
+  const preset = url.searchParams.get("preset") ?? undefined;
+  const report = await profitReport({ from, to, preset });
   const sales = await listSales({ from, to, page: "1" });
   if (url.searchParams.get("format") === "xlsx") {
     const workbook = new ExcelJS.Workbook();
