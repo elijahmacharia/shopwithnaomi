@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         {children}
-        <Toaster position="top-center" />
+        <Toaster position="bottom-center" offset={96} />
       </body>
     </html>
   );
