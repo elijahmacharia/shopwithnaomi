@@ -1,10 +1,16 @@
 import Link from "next/link";
+import { DatabaseSetup } from "@/components/database-setup";
+import { readStorefront } from "@/lib/read-storefront";
 import { listCategories } from "@/services/catalog";
 
 export const metadata = { title: "Categories" };
 
 export default async function CategoriesPage() {
-  const categories = await listCategories();
+  const result = await readStorefront(() => listCategories());
+  if (!result.ok) {
+    return <DatabaseSetup problem={result.problem} />;
+  }
+  const categories = result.data;
   return (
     <div>
       <h1 className="font-display text-3xl">Categories</h1>
