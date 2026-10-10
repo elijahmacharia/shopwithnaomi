@@ -14,6 +14,7 @@ import { markAllRead, markNotificationRead } from "@/services/notifications";
 import { updateOrderStatus } from "@/services/orders";
 import { completeSale } from "@/services/sales";
 import { updateSettings } from "@/services/settings";
+import { imageFromForm } from "@/lib/store-image";
 
 function fail(error: unknown): { ok: false; error: string } {
   unstable_rethrow(error);
@@ -33,12 +34,20 @@ export async function completeSaleAction(input: unknown) {
 
 export async function saveProductAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
+  let uploaded: string | undefined;
+  try {
+    uploaded = await imageFromForm(formData);
+  } catch (error) {
+    unstable_rethrow(error);
+    const back = id ? `/admin/products/${id}` : "/admin/products";
+    redirect(`${back}?error=${encodeURIComponent(toUserMessage(error))}`);
+  }
   const payload = {
     name: formData.get("name"),
     sku: formData.get("sku"),
     categoryId: formData.get("categoryId"),
     description: formData.get("description"),
-    imageUrl: formData.get("imageUrl"),
+    imageUrl: uploaded || formData.get("imageUrl"),
     costPrice: formData.get("costPrice"),
     sellingPrice: formData.get("sellingPrice"),
     minimumStock: formData.get("minimumStock"),
@@ -168,14 +177,12 @@ export async function orderStatusAction(formData: FormData) {
 }
 
 export async function damageAction(formData: FormData) {
-  const file = formData.get("photo");
   let photoUrl: string | undefined;
-  if (file instanceof File && file.size > 0) {
-    if (file.size > 300_000) {
-      redirect("/employee/damage-reports?error=Photo must be under 300KB.");
-    }
-    const bytes = Buffer.from(await file.arrayBuffer());
-    photoUrl = `data:${file.type || "image/jpeg"};base64,${bytes.toString("base64")}`;
+  try {
+    photoUrl = await imageFromForm(formData, "photo");
+  } catch (error) {
+    unstable_rethrow(error);
+    redirect(`/employee/damage-reports?error=${encodeURIComponent(toUserMessage(error))}`);
   }
   try {
     await createDamageReport({

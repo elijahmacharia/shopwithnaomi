@@ -13,7 +13,7 @@ const productSchema = z.object({
   sku: z.string().trim().min(2, "Enter a SKU.").max(40),
   categoryId: z.string().min(1, "Choose a category."),
   description: z.string().trim().min(3, "Enter a description.").max(1000),
-  imageUrl: z.string().trim().max(300).optional(),
+  imageUrl: z.string().trim().max(2_000_000).optional(),
   costPrice: z.string().trim().min(1, "Enter the cost price."),
   sellingPrice: z.string().trim().min(1, "Enter the selling price."),
   minimumStock: z.coerce.number().int().min(0),
@@ -36,8 +36,10 @@ export async function listCategories() {
   return prisma.category.findMany({ where: { status: "ACTIVE" }, orderBy: { name: "asc" } });
 }
 
-export async function listPublicProducts(query: { q?: string; category?: string; page?: string }) {
+export async function listPublicProducts(query: { q?: string; category?: string; page?: string; sort?: string }) {
   const paging = getPage(query.page, 12);
+  const orderBy: Prisma.ProductOrderByWithRelationInput =
+    query.sort === "price-asc" ? { sellingPrice: "asc" } : query.sort === "price-desc" ? { sellingPrice: "desc" } : { name: "asc" };
   const where: Prisma.ProductWhereInput = {
     archivedAt: null,
     isActive: true,
@@ -56,7 +58,7 @@ export async function listPublicProducts(query: { q?: string; category?: string;
     prisma.product.findMany({
       where,
       include: { category: true },
-      orderBy: { name: "asc" },
+      orderBy,
       skip: paging.skip,
       take: paging.take,
     }),
