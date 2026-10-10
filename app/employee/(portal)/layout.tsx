@@ -4,16 +4,16 @@ import { PortalFrame } from "@/components/portal-frame";
 import { requirePage } from "@/lib/auth";
 import { databaseProblem } from "@/lib/database-problem";
 
-const links: Array<[string, string]> = [
-  ["/employee/dashboard", "Today"],
-  ["/employee/sales/new", "New sale"],
-  ["/employee/sales", "My sales"],
-  ["/employee/credit", "Credit"],
-  ["/employee/inventory", "Stock"],
-  ["/employee/damage-reports", "Damage"],
-  ["/employee/price-requests", "Prices"],
-  ["/employee/notifications", "Alerts"],
-  ["/employee/profile", "Profile"],
+const links = [
+  { href: "/employee/dashboard", label: "Dashboard" },
+  { href: "/employee/sales/new", label: "New sale" },
+  { href: "/employee/sales", label: "My sales" },
+  { href: "/employee/credit", label: "Credit" },
+  { href: "/employee/inventory", label: "Stock" },
+  { href: "/employee/damage-reports", label: "Damage to owner" },
+  { href: "/employee/price-requests", label: "Price requests" },
+  { href: "/employee/notifications", label: "Alerts" },
+  { href: "/employee/profile", label: "Profile" },
 ];
 
 export default async function EmployeeLayout({ children }: { children: React.ReactNode }) {
@@ -28,7 +28,7 @@ export default async function EmployeeLayout({ children }: { children: React.Rea
     throw error;
   }
   return (
-    <PortalFrame title="SHOP WITH NÁOMÉ · Sales" links={links}>
+    <PortalFrame title="Shopkeeper till" role="Shopkeeper" links={links}>
       {children}
     </PortalFrame>
   );

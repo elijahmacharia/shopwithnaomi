@@ -8,4 +8,6 @@ tsconfig.tsbuildinfo
 *.log
 .DS_Store
 /coverage
+/public/uploads/*
+!/public/uploads/.gitkeep
 .vercel

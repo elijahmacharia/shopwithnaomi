@@ -1,28 +1,10 @@
 import { unstable_rethrow } from "next/navigation";
 import { DatabaseSetup } from "@/components/database-setup";
 import { PortalFrame } from "@/components/portal-frame";
+import type { PortalLink } from "@/components/portal-shell";
 import { requirePage } from "@/lib/auth";
 import { databaseProblem } from "@/lib/database-problem";
-
-const links: Array<[string, string]> = [
-  ["/admin/dashboard", "Dashboard"],
-  ["/admin/sales", "Sales"],
-  ["/admin/products", "Products"],
-  ["/admin/inventory", "Stock"],
-  ["/admin/stock-take", "Stock take"],
-  ["/admin/credit", "Credit"],
-  ["/admin/customers", "Customers"],
-  ["/admin/orders", "Orders"],
-  ["/admin/deliveries", "Deliveries"],
-  ["/admin/profit-loss", "Profit & loss"],
-  ["/admin/expenses", "Expenses"],
-  ["/admin/reports", "Reports"],
-  ["/admin/approvals", "Approvals"],
-  ["/admin/activity", "Activity"],
-  ["/admin/notifications", "Alerts"],
-  ["/admin/employees", "Employees"],
-  ["/admin/settings", "Settings"],
-];
+import { prisma } from "@/lib/db";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   try {
@@ -35,8 +17,28 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     }
     throw error;
   }
+  const pendingDamage = await prisma.damageReport.count({ where: { status: "PENDING" } });
+  const links: PortalLink[] = [
+    { href: "/admin/dashboard", label: "Dashboard" },
+    { href: "/admin/sales", label: "Sales" },
+    { href: "/admin/products", label: "Products" },
+    { href: "/admin/inventory", label: "Stock" },
+    { href: "/admin/stock-take", label: "Stock take" },
+    { href: "/admin/credit", label: "Credit" },
+    { href: "/admin/customers", label: "Customers" },
+    { href: "/admin/orders", label: "Orders" },
+    { href: "/admin/deliveries", label: "Deliveries" },
+    { href: "/admin/profit-loss", label: "Profit & loss" },
+    { href: "/admin/expenses", label: "Expenses" },
+    { href: "/admin/reports", label: "Reports" },
+    { href: "/admin/approvals", label: "Shopkeeper reports", badge: pendingDamage },
+    { href: "/admin/activity", label: "Activity" },
+    { href: "/admin/notifications", label: "Alerts" },
+    { href: "/admin/employees", label: "Shopkeepers" },
+    { href: "/admin/settings", label: "Settings" },
+  ];
   return (
-    <PortalFrame title="SHOP WITH NÁOMÉ · Owner" links={links}>
+    <PortalFrame title="Owner office" role="Owner" links={links}>
       {children}
     </PortalFrame>
   );
