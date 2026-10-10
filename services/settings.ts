@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { publishedWhatsapp } from "@/lib/domain/public-settings";
 import { digitsOnly } from "@/lib/domain/whatsapp";
+import { optionalText } from "@/lib/domain/optional-text";
 import { z } from "zod";
 import { writeAudit } from "./common";
 
@@ -12,12 +13,12 @@ const settingsSchema = z.object({
   email: z.string().trim().email("Enter a valid email."),
   address: z.string().trim().min(3, "Enter the address.").max(200),
   openingHours: z.string().trim().min(3, "Enter opening hours.").max(200),
-  receiptFooter: z.string().trim().max(240).optional(),
-  deliveryNote: z.string().trim().max(500).optional(),
-  pickupNote: z.string().trim().max(500).optional(),
-  paymentInstructions: z.string().trim().max(500).optional(),
+  receiptFooter: optionalText(240),
+  deliveryNote: optionalText(500),
+  pickupNote: optionalText(500),
+  paymentInstructions: optionalText(500),
   lowStockDefault: z.coerce.number().int().min(0).max(1000),
-  logoUrl: z.string().trim().max(500).optional(),
+  logoUrl: optionalText(500),
 });
 
 export async function getSettings() {

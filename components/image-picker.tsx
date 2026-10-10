@@ -65,9 +65,18 @@ export function ImagePicker({
 
   const shown = preview || currentUrl;
 
+  function openPicker() {
+    const input = inputRef.current;
+    if (!input) {
+      return;
+    }
+    input.value = "";
+    input.click();
+  }
+
   return (
     <div
-      className="grid gap-2 rounded-xl border border-dashed border-brand-secondary bg-brand-background p-3"
+      className="relative grid gap-2 rounded-xl border border-dashed border-brand-secondary bg-brand-background p-3"
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => {
         event.preventDefault();
@@ -80,16 +89,14 @@ export function ImagePicker({
         name={name}
         type="file"
         accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-        className="sr-only"
-        onClick={(event) => {
-          event.currentTarget.value = "";
-        }}
+        className="pointer-events-none absolute h-px w-px opacity-0"
+        tabIndex={-1}
         onChange={(event) => assign(event.target.files?.[0])}
       />
       <div className="flex flex-wrap items-center gap-2">
-        <label htmlFor={inputId} className="inline-flex min-h-11 cursor-pointer items-center rounded-xl bg-brand-primary px-4 text-sm font-semibold text-brand-ink">
+        <button type="button" className="inline-flex min-h-11 cursor-pointer items-center rounded-xl bg-brand-primary px-4 text-sm font-semibold text-brand-ink" onClick={openPicker}>
           {label}
-        </label>
+        </button>
         {preview ? (
           <button type="button" className="min-h-11 rounded-xl border border-brand-soft bg-white px-3 text-sm" onClick={clear}>
             Remove new picture

@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { AppError } from "@/lib/errors";
 import { decimalToCents, centsToDecimalString, marginPercent, profitPerUnitCents } from "@/lib/domain/money";
 import { slugify } from "@/lib/domain/slug";
+import { optionalText, optionalTextRule } from "@/lib/domain/optional-text";
 import { distinctHighlights } from "@/lib/domain/storefront-highlights";
 import { getPage } from "@/lib/pagination";
 import { z } from "zod";
@@ -14,12 +15,11 @@ const productSchema = z.object({
   sku: z.string().trim().min(2, "Enter a SKU.").max(40),
   categoryId: z.string().min(1, "Choose a category."),
   description: z.string().trim().min(3, "Enter a description.").max(1000),
-  imageUrl: z
-    .string()
-    .trim()
-    .max(500)
-    .optional()
-    .refine((value) => !value || value.startsWith("/") || value.startsWith("https://") || value.startsWith("http://"), "Upload the picture as a file."),
+  imageUrl: optionalTextRule(
+    500,
+    (value) => !value || value.startsWith("/") || value.startsWith("https://") || value.startsWith("http://"),
+    "Upload the picture as a file.",
+  ),
   costPrice: z.string().trim().min(1, "Enter the cost price."),
   sellingPrice: z.string().trim().min(1, "Enter the selling price."),
   minimumStock: z.coerce.number().int().min(0),
@@ -425,7 +425,7 @@ export async function archiveProduct(id: string) {
 
 const categorySchema = z.object({
   name: z.string().trim().min(2).max(60),
-  description: z.string().trim().max(240).optional(),
+  description: optionalText(240),
 });
 
 export async function createCategory(input: unknown) {

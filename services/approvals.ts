@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { AppError } from "@/lib/errors";
 import { centsToDecimalString, decimalToCents, parseMoneyToCents } from "@/lib/domain/money";
+import { optionalTextRule } from "@/lib/domain/optional-text";
 import { z } from "zod";
 import { changeStock, money, notifyUser, runTransaction, writeAudit } from "./common";
 
@@ -10,11 +11,7 @@ const damageSchema = z.object({
   quantity: z.coerce.number().int().positive("Enter the damaged quantity."),
   reason: z.enum(["BROKEN", "FAULTY", "EXPIRED", "CUSTOMER_RETURN", "OTHER"]),
   description: z.string().trim().min(3, "Describe the damage.").max(500),
-  photoUrl: z
-    .string()
-    .max(500)
-    .optional()
-    .refine((value) => !value || value.startsWith("/media/"), "Upload the picture as a file."),
+  photoUrl: optionalTextRule(500, (value) => !value || value.startsWith("/media/"), "Upload the picture as a file."),
 });
 
 export async function createDamageReport(input: unknown) {
