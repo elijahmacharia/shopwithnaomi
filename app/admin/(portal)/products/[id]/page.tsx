@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { archiveProductAction, saveProductAction } from "@/actions/ops";
+import { ImagePicker } from "@/components/image-picker";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { listCategories, getOwnerProduct } from "@/services/catalog";
 
@@ -19,11 +20,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         <label className="grid gap-1 text-sm">SKU<input name="sku" defaultValue={product.sku} required className="min-h-11 rounded-md border px-3" /></label>
         <label className="grid gap-1 text-sm">Category<select name="categoryId" defaultValue={product.categoryId} className="min-h-11 rounded-md border px-3">{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
         <input type="hidden" name="imageUrl" defaultValue={product.imageUrl ?? ""} />
-        <label className="grid gap-1 text-sm">
-          Picture
-          {product.imageUrl ? <img src={product.imageUrl} alt="" className="h-28 w-28 rounded-xl object-cover" /> : <span className="text-brand-muted">No picture yet.</span>}
-          <input name="image" type="file" accept="image/*" aria-label="Product picture" />
-        </label>
+        <ImagePicker label="Replace image" currentUrl={product.imageUrl} />
         <label className="grid gap-1 text-sm">Cost price<input name="costPrice" defaultValue={product.costPrice} required className="min-h-11 rounded-md border px-3" /></label>
         <label className="grid gap-1 text-sm">Selling price<input name="sellingPrice" defaultValue={product.sellingPrice} required className="min-h-11 rounded-md border px-3" /></label>
         <label className="grid gap-1 text-sm">Minimum stock<input name="minimumStock" type="number" defaultValue={product.minimumStock} className="min-h-11 rounded-md border px-3" /></label>

@@ -13,7 +13,12 @@ const productSchema = z.object({
   sku: z.string().trim().min(2, "Enter a SKU.").max(40),
   categoryId: z.string().min(1, "Choose a category."),
   description: z.string().trim().min(3, "Enter a description.").max(1000),
-  imageUrl: z.string().trim().max(2_000_000).optional(),
+  imageUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .optional()
+    .refine((value) => !value || value.startsWith("/") || value.startsWith("https://") || value.startsWith("http://"), "Upload the picture as a file."),
   costPrice: z.string().trim().min(1, "Enter the cost price."),
   sellingPrice: z.string().trim().min(1, "Enter the selling price."),
   minimumStock: z.coerce.number().int().min(0),
@@ -36,13 +41,14 @@ export async function listCategories() {
   return prisma.category.findMany({ where: { status: "ACTIVE" }, orderBy: { name: "asc" } });
 }
 
-export async function listPublicProducts(query: { q?: string; category?: string; page?: string; sort?: string }) {
+export async function listPublicProducts(query: { q?: string; category?: string; page?: string; sort?: string; stock?: string }) {
   const paging = getPage(query.page, 12);
   const orderBy: Prisma.ProductOrderByWithRelationInput =
-    query.sort === "price-asc" ? { sellingPrice: "asc" } : query.sort === "price-desc" ? { sellingPrice: "desc" } : { name: "asc" };
+    query.sort === "price-asc" ? { sellingPrice: "asc" } : query.sort === "price-desc" ? { sellingPrice: "desc" } : query.sort === "newest" ? { createdAt: "desc" } : { name: "asc" };
   const where: Prisma.ProductWhereInput = {
     archivedAt: null,
     isActive: true,
+    ...(query.stock === "in" ? { stockQuantity: { gt: 0 } } : query.stock === "out" ? { stockQuantity: 0 } : {}),
     ...(query.category ? { category: { slug: query.category } } : {}),
     ...(query.q
       ? {
@@ -84,6 +90,58 @@ export async function getPublicProductsByIds(ids: string[]) {
     include: { category: true },
   });
   return rows.map(toPublicProduct);
+}
+
+export async function relatedProducts(categorySlug: string, excludeId: string) {
+  const rows = await prisma.product.findMany({
+    where: { archivedAt: null, isActive: true, id: { not: excludeId }, category: { slug: categorySlug } },
+    include: { category: true },
+    orderBy: { name: "asc" },
+    take: 4,
+  });
+  return rows.map(toPublicProduct);
+}
+
+export async function storefrontHighlights() {
+  const [categories, newestRows, popularRows, shelf] = await Promise.all([
+    listCategories(),
+    prisma.product.findMany({
+      where: { archivedAt: null, isActive: true },
+      include: { category: true },
+      orderBy: { createdAt: "desc" },
+      take: 4,
+    }),
+    prisma.saleItem.groupBy({
+      by: ["productId"],
+      _sum: { quantity: true },
+      orderBy: { _sum: { quantity: "desc" } },
+      take: 8,
+    }),
+    prisma.product.findMany({
+      where: { archivedAt: null, isActive: true, stockQuantity: { gt: 0 } },
+      include: { category: true },
+      orderBy: { name: "asc" },
+      take: 8,
+    }),
+  ]);
+  const popularIds = popularRows.filter((row) => (row._sum.quantity ?? 0) > 0).map((row) => row.productId);
+  const popularFound = popularIds.length
+    ? await prisma.product.findMany({
+        where: { id: { in: popularIds }, archivedAt: null, isActive: true },
+        include: { category: true },
+      })
+    : [];
+  const popular = popularIds
+    .map((id) => popularFound.find((product) => product.id === id))
+    .filter((product): product is (typeof popularFound)[number] => Boolean(product))
+    .slice(0, 4)
+    .map(toPublicProduct);
+  return {
+    categories,
+    newest: newestRows.map(toPublicProduct),
+    popular,
+    shelf: shelf.map(toPublicProduct),
+  };
 }
 
 export function toPublicProduct(product: {

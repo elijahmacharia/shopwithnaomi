@@ -6,6 +6,7 @@ import { FormEvent, useState } from "react";
 import { useStore } from "./store-provider";
 
 const links = [
+  ["/", "Home"],
   ["/shop", "Shop"],
   ["/categories", "Categories"],
   ["/about", "About"],
@@ -56,7 +57,7 @@ export function SiteHeader() {
         <Link href="/cart" className="grid h-11 min-w-11 place-items-center rounded-full border border-brand-soft px-3 text-sm font-semibold" aria-label={`Cart, ${cartCount} items`}>
           {cartCount}
         </Link>
-        <Link href="/sign-in" className="hidden min-h-11 items-center rounded-full bg-brand-primary px-4 text-sm font-semibold text-brand-ink sm:inline-flex">
+        <Link href="/sign-in" className="inline-flex min-h-11 items-center rounded-full bg-brand-primary px-3 text-sm font-semibold text-brand-ink sm:px-4">
           Sign in
         </Link>
       </div>

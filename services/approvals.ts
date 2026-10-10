@@ -10,7 +10,11 @@ const damageSchema = z.object({
   quantity: z.coerce.number().int().positive("Enter the damaged quantity."),
   reason: z.enum(["BROKEN", "FAULTY", "EXPIRED", "CUSTOMER_RETURN", "OTHER"]),
   description: z.string().trim().min(3, "Describe the damage.").max(500),
-  photoUrl: z.string().max(400_000).optional(),
+  photoUrl: z
+    .string()
+    .max(500)
+    .optional()
+    .refine((value) => !value || value.startsWith("/media/"), "Upload the picture as a file."),
 });
 
 export async function createDamageReport(input: unknown) {
@@ -60,15 +64,28 @@ export async function listDamageReports(scope: "own" | "all") {
     photoUrl: row.photoUrl,
     status: row.status,
     by: row.reporter.name,
+    stock: row.product.stockQuantity,
+    reviewNote: row.reviewNote,
     createdAt: row.createdAt,
   }));
 }
 
-export async function reviewDamage(id: string, decision: "APPROVED" | "REJECTED") {
+export async function reviewDamage(id: string, decision: "APPROVED" | "REJECTED", note = "") {
   const actor = await requireUser(["OWNER"], "approvals");
+  const reviewNote = note.trim();
+  if (decision === "REJECTED" && reviewNote.length < 3) {
+    throw new AppError("Enter a reason for rejecting the damage report.");
+  }
   await runTransaction(async (tx) => {
     const report = await tx.damageReport.findUnique({ where: { id }, include: { product: true } });
     if (!report || report.status !== "PENDING") {
+      throw new AppError("This damage report has already been reviewed.");
+    }
+    const updated = await tx.damageReport.updateMany({
+      where: { id, status: "PENDING" },
+      data: { status: decision, reviewedBy: actor.id, reviewedAt: new Date(), reviewNote: reviewNote || null },
+    });
+    if (updated.count !== 1) {
       throw new AppError("This damage report has already been reviewed.");
     }
     if (decision === "APPROVED") {
@@ -82,10 +99,6 @@ export async function reviewDamage(id: string, decision: "APPROVED" | "REJECTED"
         referenceId: report.id,
       });
     }
-    await tx.damageReport.update({
-      where: { id },
-      data: { status: decision, reviewedBy: actor.id, reviewedAt: new Date() },
-    });
     await writeAudit(tx, {
       userId: actor.id,
       action: decision === "APPROVED" ? "damage.approved" : "damage.rejected",
@@ -151,14 +164,19 @@ export async function listPriceRequests(scope: "own" | "all") {
     requestedPrice: centsToDecimalString(decimalToCents(row.requestedPrice)),
     reason: row.reason,
     status: row.status,
+    reviewNote: row.reviewNote,
     by: row.requester.name,
     requestedBy: row.requestedBy,
     createdAt: row.createdAt,
   }));
 }
 
-export async function reviewPriceRequest(id: string, decision: "APPROVED" | "REJECTED") {
+export async function reviewPriceRequest(id: string, decision: "APPROVED" | "REJECTED", note = "") {
   const actor = await requireUser(["OWNER"], "approvals");
+  const reviewNote = note.trim();
+  if (decision === "REJECTED" && reviewNote.length < 3) {
+    throw new AppError("Enter a reason for rejecting the price request.");
+  }
   await runTransaction(async (tx) => {
     const request = await tx.priceChangeRequest.findUnique({ where: { id }, include: { product: true } });
     if (!request || request.status !== "PENDING") {
@@ -166,6 +184,13 @@ export async function reviewPriceRequest(id: string, decision: "APPROVED" | "REJ
     }
     if (request.requestedBy === actor.id) {
       throw new AppError("You cannot approve your own price request.");
+    }
+    const updated = await tx.priceChangeRequest.updateMany({
+      where: { id, status: "PENDING" },
+      data: { status: decision, reviewedBy: actor.id, reviewedAt: new Date(), reviewNote: reviewNote || null },
+    });
+    if (updated.count !== 1) {
+      throw new AppError("This price request has already been reviewed.");
     }
     if (decision === "APPROVED") {
       await tx.product.update({ where: { id: request.productId }, data: { sellingPrice: request.requestedPrice } });
@@ -179,10 +204,6 @@ export async function reviewPriceRequest(id: string, decision: "APPROVED" | "REJ
         },
       });
     }
-    await tx.priceChangeRequest.update({
-      where: { id },
-      data: { status: decision, reviewedBy: actor.id, reviewedAt: new Date() },
-    });
     await writeAudit(tx, {
       userId: actor.id,
       action: decision === "APPROVED" ? "price.approved" : "price.rejected",

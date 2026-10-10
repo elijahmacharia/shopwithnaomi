@@ -6,12 +6,12 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          primary: "#B1B2FF",
-          secondary: "#AAC4FF",
-          soft: "#D2DAFF",
-          background: "#EEF1FF",
-          ink: "#1E1B4B",
-          muted: "#4C4680",
+          primary: "var(--brand-primary)",
+          secondary: "var(--brand-secondary)",
+          soft: "var(--brand-soft)",
+          background: "var(--brand-background)",
+          ink: "var(--brand-ink)",
+          muted: "var(--brand-muted)",
         },
       },
       fontFamily: {

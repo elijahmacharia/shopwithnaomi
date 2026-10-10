@@ -40,7 +40,8 @@ export function ProductCard({ product }: { product: CardProduct }) {
       <Link href={`/shop/${product.slug}`} className="font-display text-lg leading-snug">
         {product.name}
       </Link>
-      <div className="mt-1 flex items-center justify-between gap-2">
+      <p className="mt-1 text-sm text-brand-muted">{product.inStock ? "In stock" : "Out of stock"}</p>
+      <div className="mt-2 flex items-center justify-between gap-2">
         <p className="font-semibold">{formatKsh(parseMoneyToCents(product.sellingPrice))}</p>
         <button
           type="button"

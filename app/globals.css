@@ -3,8 +3,14 @@
 @tailwind utilities;
 
 :root {
-  color: #1e1b4b;
-  background: #eef1ff;
+  --brand-primary: #b1b2ff;
+  --brand-secondary: #aac4ff;
+  --brand-soft: #d2daff;
+  --brand-background: #eef1ff;
+  --brand-ink: #1e1b4b;
+  --brand-muted: #4c4680;
+  color: var(--brand-ink);
+  background: var(--brand-background);
 }
 
 body {

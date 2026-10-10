@@ -7,7 +7,7 @@ import Link from "next/link";
 
 export const metadata = { title: "Shop" };
 
-export default async function ShopPage({ searchParams }: { searchParams: Promise<{ q?: string; category?: string; page?: string; sort?: string }> }) {
+export default async function ShopPage({ searchParams }: { searchParams: Promise<{ q?: string; category?: string; page?: string; sort?: string; stock?: string }> }) {
   const params = await searchParams;
   const result = await readStorefront(() => Promise.all([listPublicProducts(params), listCategories()]));
   if (!result.ok) {
@@ -16,7 +16,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   const [{ products, total, page, pageSize }, categories] = result.data;
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
-  const query = { q: params.q, category: params.category, sort: params.sort };
+  const query = { q: params.q, category: params.category, sort: params.sort, stock: params.stock };
   return (
     <div className="grid gap-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -37,8 +37,14 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
         <form className="ml-auto flex flex-wrap gap-2">
           <input type="hidden" name="category" value={params.category ?? ""} />
           <input name="q" defaultValue={params.q} aria-label="Search products" placeholder="Search" className="min-h-11 rounded-full border border-brand-soft bg-white px-4" />
+          <select name="stock" defaultValue={params.stock ?? ""} aria-label="Availability" className="min-h-11 rounded-full border border-brand-soft bg-white px-3">
+            <option value="">Any stock</option>
+            <option value="in">In stock</option>
+            <option value="out">Out of stock</option>
+          </select>
           <select name="sort" defaultValue={params.sort ?? "name"} aria-label="Sort" className="min-h-11 rounded-full border border-brand-soft bg-white px-3">
             <option value="name">Name</option>
+            <option value="newest">Newest</option>
             <option value="price-asc">Price, low to high</option>
             <option value="price-desc">Price, high to low</option>
           </select>

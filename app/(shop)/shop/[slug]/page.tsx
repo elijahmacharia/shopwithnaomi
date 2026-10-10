@@ -5,7 +5,8 @@ import { DatabaseSetup } from "@/components/database-setup";
 import { ProductActions } from "@/components/shop/product-actions";
 import { formatKsh, parseMoneyToCents } from "@/lib/domain/money";
 import { readStorefront } from "@/lib/read-storefront";
-import { getPublicProduct } from "@/services/catalog";
+import { ProductCard } from "@/components/shop/product-card";
+import { getPublicProduct, relatedProducts } from "@/services/catalog";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const result = await readStorefront(async () => getPublicProduct((await params).slug));
@@ -24,6 +25,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (!product) {
     notFound();
   }
+  const related = await relatedProducts(product.category.slug, product.id);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -49,6 +51,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           Back to shop
         </Link>
       </div>
+      {related.length > 0 ? (
+        <section className="md:col-span-2">
+          <h2 className="font-display text-2xl">More in {product.category.name}</h2>
+          <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
+            {related.map((item) => (
+              <ProductCard key={item.id} product={item} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </article>
   );
 }
