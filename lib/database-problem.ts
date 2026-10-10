@@ -2,7 +2,7 @@ export type DatabaseProblem = "missing-url" | "localhost" | "unreachable" | "not
 
 export function databaseProblem(error: unknown): DatabaseProblem | null {
   const message = error instanceof Error ? `${error.name} ${error.message}` : String(error);
-  if (/Environment variable not found: DATABASE_URL/i.test(message)) {
+  if (/Environment variable not found: (DATABASE_URL|DIRECT_URL)/i.test(message)) {
     return "missing-url";
   }
   if (/localhost|127\.0\.0\.1/.test(message) && /reach|connect|ECONNREFUSED|database/i.test(message)) {
