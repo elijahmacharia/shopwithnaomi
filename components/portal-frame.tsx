@@ -30,7 +30,9 @@ export function PortalFrame({
             </Link>
           ))}
         </nav>
-        <div id="main">{children}</div>
+        <div id="main" className="min-w-0">
+          {children}
+        </div>
       </div>
     </div>
   );

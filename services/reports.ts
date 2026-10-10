@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { centsToDecimalString, decimalToCents } from "@/lib/domain/money";
 import { grossProfitCents, netProfitCents } from "@/lib/domain/profit";
+import { buildSalesSeries, dateKeysEnding, nairobiDateKey, nairobiDayStart } from "@/lib/domain/sales-series";
 
 function range(from?: string, to?: string) {
   const end = to ? new Date(to) : new Date();
@@ -75,23 +76,20 @@ export async function profitReport(query: { from?: string; to?: string; preset?:
 
 export async function salesSeries(days = 14) {
   await requireUser(["OWNER"], "owner-dashboard");
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - (days - 1));
-  const rows = await prisma.$queryRaw<Array<{ day: Date; revenue: string; transactions: number }>>(Prisma.sql`
-    SELECT date_trunc('day', "createdAt") AS day,
-           COALESCE(SUM("total"), 0)::text AS revenue,
-           COUNT(*)::int AS transactions
+  const dayKeys = dateKeysEnding(nairobiDateKey(new Date()), days);
+  const start = nairobiDayStart(dayKeys[0]);
+  const rows = await prisma.$queryRaw<Array<{ day: string; revenue: string }>>(Prisma.sql`
+    SELECT to_char(("createdAt" AT TIME ZONE 'Africa/Nairobi')::date, 'YYYY-MM-DD') AS day,
+           COALESCE(SUM("total"), 0)::text AS revenue
     FROM "Sale"
     WHERE "createdAt" >= ${start}
     GROUP BY 1
     ORDER BY 1
   `);
-  return rows.map((row) => ({
-    day: new Date(row.day).toLocaleDateString("en-KE", { month: "short", day: "numeric" }),
-    revenue: decimalToCents(row.revenue) / 100,
-    transactions: row.transactions,
-  }));
+  return buildSalesSeries(
+    rows.map((row) => ({ day: row.day, revenueCents: decimalToCents(row.revenue) })),
+    dayKeys,
+  );
 }
 
 export async function dashboardStats() {
