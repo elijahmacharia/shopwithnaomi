@@ -4,6 +4,8 @@ dist
 tsconfig.tsbuildinfo
 .env
 .env.local
+.vercel
 *.log
 .DS_Store
 /coverage
+.vercel
