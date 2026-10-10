@@ -32,6 +32,9 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
         <p className="text-sm text-brand-muted">{today}</p>
         <h1 className="font-display text-3xl">Hello, {stats.actor.name}</h1>
       </div>
+      {stats.actor.email.endsWith("@example.com") ? (
+        <p className="rounded-xl border border-brand-secondary bg-white px-4 py-3 text-sm">This sign-in still uses a sample email. Open Profile and set a new password before customers use the live shop.</p>
+      ) : null}
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
         {cards.map(([label, value, href]) => (
           <Link key={label} href={href} className="rounded-2xl border border-brand-soft bg-white p-4 shadow-card">

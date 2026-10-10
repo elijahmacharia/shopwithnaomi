@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { toUserMessage } from "@/lib/errors";
 import { reviewDamage, reviewPriceRequest, createDamageReport, createPriceRequest } from "@/services/approvals";
-import { archiveCategory, archiveProduct, createCategory, createProduct, updateProduct } from "@/services/catalog";
+import { archiveCategory, archiveProduct, createCategory, createProduct, deleteProduct, updateProduct } from "@/services/catalog";
 import { recordCreditPayment } from "@/services/credit";
 import { saveCustomer } from "@/services/customers";
 import { archiveExpense, createExpense, updateExpense } from "@/services/expenses";
@@ -63,6 +63,17 @@ export async function saveProductAction(formData: FormData) {
     unstable_rethrow(error);
     redirect(`/admin/products?error=${encodeURIComponent(toUserMessage(error))}`);
   }
+}
+
+export async function deleteProductAction(formData: FormData) {
+  const id = String(formData.get("id"));
+  try {
+    await deleteProduct(id);
+  } catch (error) {
+    unstable_rethrow(error);
+    redirect(`/admin/products/${id}?error=${encodeURIComponent(toUserMessage(error))}`);
+  }
+  redirect("/admin/products?notice=Product deleted.");
 }
 
 export async function archiveProductAction(formData: FormData) {
@@ -260,6 +271,13 @@ export async function resetAccessAction(formData: FormData) {
 }
 
 export async function settingsAction(formData: FormData) {
+  let logoUrl: string | undefined;
+  try {
+    logoUrl = await imageFromForm(formData, "logo");
+  } catch (error) {
+    unstable_rethrow(error);
+    redirect(`/admin/settings?error=${encodeURIComponent(toUserMessage(error))}`);
+  }
   try {
     await updateSettings({
       businessName: formData.get("businessName"),
@@ -269,7 +287,11 @@ export async function settingsAction(formData: FormData) {
       address: formData.get("address"),
       openingHours: formData.get("openingHours"),
       receiptFooter: formData.get("receiptFooter"),
+      deliveryNote: formData.get("deliveryNote"),
+      pickupNote: formData.get("pickupNote"),
+      paymentInstructions: formData.get("paymentInstructions"),
       lowStockDefault: formData.get("lowStockDefault"),
+      logoUrl: logoUrl ?? (formData.get("removeImage") === "on" ? "" : undefined),
     });
   } catch (error) {
     unstable_rethrow(error);

@@ -1,5 +1,6 @@
 import { DatabaseSetup } from "@/components/database-setup";
 import { readStorefront } from "@/lib/read-storefront";
+import { publicBusiness } from "@/lib/domain/public-settings";
 import { getSettings } from "@/services/settings";
 
 export const metadata = { title: "Privacy policy" };
@@ -9,7 +10,7 @@ export default async function PrivacyPage() {
   if (!result.ok) {
     return <DatabaseSetup problem={result.problem} />;
   }
-  const settings = result.data;
+  const settings = publicBusiness(result.data);
   return (
     <article className="mx-auto grid max-w-2xl gap-4">
       <h1 className="font-display text-4xl">Privacy policy</h1>

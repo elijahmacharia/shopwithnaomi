@@ -5,6 +5,7 @@ import { StoreProvider } from "@/components/shop/store-provider";
 import { WhatsappButton } from "@/components/shop/whatsapp-button";
 import { readStorefront } from "@/lib/read-storefront";
 import { listCategories } from "@/services/catalog";
+import { publicBusiness } from "@/lib/domain/public-settings";
 import { getSettings, getWhatsappNumber } from "@/services/settings";
 
 export default async function ShopLayout({ children }: { children: React.ReactNode }) {
@@ -12,7 +13,8 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
   if (!shell.ok) {
     return <DatabaseSetup problem={shell.problem} />;
   }
-  const [settings, whatsapp, categories] = shell.data;
+  const [stored, whatsapp, categories] = shell.data;
+  const settings = publicBusiness(stored);
   return (
     <StoreProvider>
       <SiteHeader />

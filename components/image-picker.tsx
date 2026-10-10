@@ -81,6 +81,9 @@ export function ImagePicker({
         type="file"
         accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
         className="sr-only"
+        onClick={(event) => {
+          event.currentTarget.value = "";
+        }}
         onChange={(event) => assign(event.target.files?.[0])}
       />
       <div className="flex flex-wrap items-center gap-2">

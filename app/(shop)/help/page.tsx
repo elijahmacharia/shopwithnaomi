@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { DatabaseSetup } from "@/components/database-setup";
 import { readStorefront } from "@/lib/read-storefront";
+import { publicBusiness } from "@/lib/domain/public-settings";
 import { getSettings } from "@/services/settings";
 
 export const metadata = { title: "Help" };
@@ -10,7 +11,7 @@ export default async function HelpPage() {
   if (!result.ok) {
     return <DatabaseSetup problem={result.problem} />;
   }
-  const settings = result.data;
+  const settings = publicBusiness(result.data);
   return (
     <article className="mx-auto grid max-w-2xl gap-6">
       <h1 className="font-display text-4xl">Help</h1>
@@ -32,7 +33,7 @@ export default async function HelpPage() {
       </section>
       <section>
         <h2 className="font-display text-2xl">Contact</h2>
-        <p className="mt-2 text-brand-muted">{settings.businessName}{settings.phone ? ` · ${settings.phone}` : ""}{settings.email ? ` · ${settings.email}` : ""}</p>
+        <p className="mt-2 text-brand-muted">{settings.businessName}{settings.phone ? ` · ${settings.phone}` : " · phone not published yet"}{settings.email ? ` · ${settings.email}` : ""}</p>
         <Link href="/contact" className="mt-3 inline-flex min-h-11 items-center font-semibold underline decoration-brand-primary underline-offset-4">
           Contact page
         </Link>

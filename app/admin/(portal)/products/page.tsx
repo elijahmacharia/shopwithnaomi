@@ -55,7 +55,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                 <td>KSh {product.costPrice}</td>
                 <td>{product.stockQuantity}</td>
                 <td>{product.margin}%</td>
-                <td>{!product.archived && <ConfirmSubmit action={archiveProductAction} id={product.id} label="Remove" message={`Remove ${product.name} from the shop? Past sales stay on record.`} />}</td>
+                <td>{!product.archived && <ConfirmSubmit action={archiveProductAction} id={product.id} label="Archive" message={`Archive ${product.name}? It leaves the shop. Past sales and stock records stay.`} />}</td>
               </tr>
             ))}
           </tbody>

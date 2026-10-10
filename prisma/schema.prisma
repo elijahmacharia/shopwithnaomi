@@ -488,9 +488,12 @@ model BusinessSetting {
   email           String
   address         String
   openingHours    String
-  receiptFooter   String
-  lowStockDefault Int      @default(5)
-  logoUrl         String?
+  receiptFooter        String
+  deliveryNote         String @default("")
+  pickupNote           String @default("")
+  paymentInstructions  String @default("")
+  lowStockDefault      Int    @default(5)
+  logoUrl              String?
   updatedAt       DateTime @updatedAt
 }
 

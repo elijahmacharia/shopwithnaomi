@@ -37,7 +37,7 @@ export function DatabaseSetup({ problem }: { problem: DatabaseProblem }) {
       )}
       <pre className="mt-3 overflow-x-auto rounded-md bg-white p-3 text-sm">
         {problem === "not-seeded"
-          ? "SEED_OWNER_PASSWORD=owner-dev-pass SEED_EMPLOYEE_PASSWORD=employee-dev-pass npm run db:seed"
+          ? "Set SEED_OWNER_PASSWORD and SEED_EMPLOYEE_PASSWORD, then run npm run db:seed"
           : "npx prisma migrate deploy\nnpm run db:seed"}
       </pre>
       {problem === "not-seeded" ? <p className="mt-3">Refresh this page after the seed finishes.</p> : null}

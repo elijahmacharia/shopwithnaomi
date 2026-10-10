@@ -26,14 +26,7 @@ PostgreSQL must be running. Local development uses the same address for `DATABAS
 
 ## Development sign-in
 
-These passwords come from `SEED_OWNER_PASSWORD` and `SEED_EMPLOYEE_PASSWORD`. The example values are for development only.
-
-| Role | Email | Password | Page |
-| --- | --- | --- | --- |
-| Owner | owner@example.com | owner-dev-pass | /admin/login |
-| Employee | employee@example.com | employee-dev-pass | /employee/login |
-
-The public shop does not link to these pages.
+Sample accounts are created by `npm run db:seed`. Their passwords come only from `SEED_OWNER_PASSWORD` and `SEED_EMPLOYEE_PASSWORD` in the local environment file. Change both passwords in Profile before the shop is shared. Do not publish those passwords.
 
 ## Checks
 
