@@ -27,6 +27,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       <form action={customerAction} className="grid gap-2 rounded-md bg-white p-4 sm:grid-cols-2">
         <input name="name" required placeholder="Name" aria-label="Name" className="min-h-11 rounded-md border px-3" />
         <input name="phone" required placeholder="Phone" aria-label="Phone" className="min-h-11 rounded-md border px-3" />
+        <input name="email" type="email" placeholder="Email" aria-label="Email" className="min-h-11 rounded-md border px-3" />
         <input name="address" placeholder="Address" aria-label="Address" className="min-h-11 rounded-md border px-3" />
         <input name="landmark" placeholder="Landmark" aria-label="Landmark" className="min-h-11 rounded-md border px-3" />
         <button className="min-h-11 rounded-md bg-brand-ink text-white">Save customer</button>

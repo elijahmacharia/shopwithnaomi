@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { centsToDecimalString, decimalToCents } from "@/lib/domain/money";
 import { getPage } from "@/lib/pagination";
+import { optionalText } from "@/lib/domain/optional-text";
 import { z } from "zod";
 import { upsertCustomer, writeAudit } from "./common";
 
@@ -73,9 +74,9 @@ export async function getCustomer(id: string) {
 const customerSchema = z.object({
   name: z.string().trim().min(2),
   phone: z.string().trim().min(8),
-  email: z.string().trim().optional(),
-  address: z.string().trim().optional(),
-  landmark: z.string().trim().optional(),
+  email: optionalText(120),
+  address: optionalText(200),
+  landmark: optionalText(160),
 });
 
 export async function saveCustomer(input: unknown, id?: string) {
@@ -97,7 +98,13 @@ export async function saveCustomer(input: unknown, id?: string) {
         },
       });
     }
-    return upsertCustomer(tx, data);
+    return upsertCustomer(tx, {
+      name: data.name,
+      phone: data.phone,
+      email: data.email || undefined,
+      address: data.address || undefined,
+      landmark: data.landmark || undefined,
+    });
   });
   await writeAudit(prisma, {
     userId: actor.id,

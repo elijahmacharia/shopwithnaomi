@@ -4,6 +4,7 @@ import { AppError } from "@/lib/errors";
 import { centsToDecimalString, decimalToCents, parseMoneyToCents } from "@/lib/domain/money";
 import { assertPaymentAmount, creditStatus } from "@/lib/domain/payment";
 import { getPage } from "@/lib/pagination";
+import { optionalText } from "@/lib/domain/optional-text";
 import { z } from "zod";
 import { money, notifyOwners, runTransaction, writeAudit } from "./common";
 
@@ -51,7 +52,7 @@ const paymentSchema = z.object({
   creditId: z.string().min(1),
   amount: z.string().trim().min(1, "Enter the amount paid."),
   method: z.enum(["CASH", "MPESA", "OTHER"]),
-  reference: z.string().trim().max(80).optional(),
+  reference: optionalText(80),
 });
 
 export async function recordCreditPayment(input: unknown) {

@@ -16,7 +16,7 @@ export function ConfirmSubmit({
   const dialog = useRef<HTMLDialogElement>(null);
   return (
     <>
-      <button type="button" className="min-h-11 text-sm" onClick={() => dialog.current?.showModal()}>
+      <button type="button" className="min-h-11 rounded-xl border border-brand-soft bg-white px-3 text-sm font-semibold" onClick={() => dialog.current?.showModal()}>
         {label}
       </button>
       <dialog ref={dialog} className="w-[min(100%,24rem)] rounded-md border border-brand-soft p-4">

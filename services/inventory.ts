@@ -4,6 +4,7 @@ import { AppError } from "@/lib/errors";
 import { centsToDecimalString, decimalToCents } from "@/lib/domain/money";
 import { isLowStock } from "@/lib/domain/stock";
 import { getPage } from "@/lib/pagination";
+import { optionalText } from "@/lib/domain/optional-text";
 import { z } from "zod";
 import { changeStock, runTransaction, writeAudit } from "./common";
 
@@ -84,12 +85,12 @@ export async function adjustStock(input: unknown) {
 }
 
 const stockTakeSchema = z.object({
-  notes: z.string().trim().max(300).optional(),
+  notes: optionalText(300),
   items: z.array(
     z.object({
       productId: z.string(),
       physicalQuantity: z.number().int().min(0),
-      reason: z.string().trim().max(160).optional(),
+      reason: optionalText(160),
     }),
   ),
 });

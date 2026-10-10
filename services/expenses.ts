@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { AppError } from "@/lib/errors";
 import { centsToDecimalString, decimalToCents, parseMoneyToCents } from "@/lib/domain/money";
 import { getPage } from "@/lib/pagination";
+import { optionalText } from "@/lib/domain/optional-text";
 import { z } from "zod";
 import { money, writeAudit } from "./common";
 
@@ -12,7 +13,7 @@ const expenseSchema = z.object({
   description: z.string().trim().min(2, "Enter a description.").max(160),
   amount: z.string().trim().min(1, "Enter an amount."),
   date: z.string().min(1, "Choose a date."),
-  notes: z.string().trim().max(300).optional(),
+  notes: optionalText(300),
 });
 
 function mapExpense(row: {
