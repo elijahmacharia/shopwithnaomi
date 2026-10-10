@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { archiveCategoryAction, archiveProductAction, categoryAction, saveProductAction } from "@/actions/ops";
+import { ImagePicker } from "@/components/image-picker";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { Notice } from "@/components/notice";
 import { Pager } from "@/components/pager";
@@ -24,10 +25,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         <input name="name" required placeholder="Name" aria-label="Name" className={field} />
         <input name="sku" required placeholder="SKU" aria-label="SKU" className={field} />
         <select name="categoryId" aria-label="Category" className={field}>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
-        <label className="grid gap-1 text-sm">
-          Picture
-          <input name="image" type="file" accept="image/*" aria-label="Product picture" className="min-h-11 text-sm" />
-        </label>
+        <div className="md:col-span-2">
+          <ImagePicker />
+        </div>
         <input name="costPrice" required placeholder="Cost price" aria-label="Cost price" className={field} />
         <input name="sellingPrice" required placeholder="Selling price" aria-label="Selling price" className={field} />
         <input name="stockQuantity" type="number" min={0} defaultValue={0} aria-label="Current stock" className={field} />

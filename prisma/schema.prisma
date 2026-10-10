@@ -334,6 +334,7 @@ model DamageReport {
   reviewedBy  String?
   reviewer    User?          @relation("DamageReviewer", fields: [reviewedBy], references: [id])
   reviewedAt  DateTime?
+  reviewNote  String?
   createdAt   DateTime       @default(now())
 
   @@index([status, createdAt])
@@ -352,6 +353,7 @@ model PriceChangeRequest {
   reviewedBy     String?
   reviewer       User?          @relation("PriceReviewer", fields: [reviewedBy], references: [id])
   reviewedAt     DateTime?
+  reviewNote     String?
   createdAt      DateTime       @default(now())
 
   @@index([status, createdAt])
@@ -494,4 +496,11 @@ model BusinessSetting {
 model Counter {
   id    String @id
   value Int    @default(0)
+}
+
+model StoredFile {
+  id        String   @id @default(cuid())
+  mime      String
+  bytes     Bytes
+  createdAt DateTime @default(now())
 }

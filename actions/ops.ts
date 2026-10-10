@@ -47,7 +47,7 @@ export async function saveProductAction(formData: FormData) {
     sku: formData.get("sku"),
     categoryId: formData.get("categoryId"),
     description: formData.get("description"),
-    imageUrl: uploaded || formData.get("imageUrl"),
+    imageUrl: uploaded || (formData.get("removeImage") === "on" ? "" : formData.get("imageUrl")),
     costPrice: formData.get("costPrice"),
     sellingPrice: formData.get("sellingPrice"),
     minimumStock: formData.get("minimumStock"),
@@ -214,12 +214,22 @@ export async function priceRequestAction(formData: FormData) {
 }
 
 export async function reviewDamageAction(formData: FormData) {
-  await reviewDamage(String(formData.get("id")), String(formData.get("decision")) as "APPROVED" | "REJECTED");
+  try {
+    await reviewDamage(String(formData.get("id")), String(formData.get("decision")) as "APPROVED" | "REJECTED", String(formData.get("note") ?? ""));
+  } catch (error) {
+    unstable_rethrow(error);
+    redirect(`/admin/approvals?error=${encodeURIComponent(toUserMessage(error))}`);
+  }
   redirect("/admin/approvals?notice=Damage report updated.");
 }
 
 export async function reviewPriceAction(formData: FormData) {
-  await reviewPriceRequest(String(formData.get("id")), String(formData.get("decision")) as "APPROVED" | "REJECTED");
+  try {
+    await reviewPriceRequest(String(formData.get("id")), String(formData.get("decision")) as "APPROVED" | "REJECTED", String(formData.get("note") ?? ""));
+  } catch (error) {
+    unstable_rethrow(error);
+    redirect(`/admin/approvals?error=${encodeURIComponent(toUserMessage(error))}`);
+  }
   redirect("/admin/approvals?notice=Price request updated.");
 }
 
@@ -288,9 +298,19 @@ export async function customerAction(formData: FormData) {
   redirect(id ? `/admin/customers/${id}?notice=Customer saved.` : "/admin/customers?notice=Customer saved.");
 }
 
+function profilePath(formData: FormData) {
+  const next = String(formData.get("returnTo") ?? "");
+  return next === "/admin/profile" ? "/admin/profile" : "/employee/profile";
+}
+
 export async function profileAction(formData: FormData) {
-  await updateProfile({ name: formData.get("name"), phone: formData.get("phone") });
-  redirect("/employee/profile?notice=Profile saved.");
+  try {
+    await updateProfile({ name: formData.get("name"), phone: formData.get("phone") });
+  } catch (error) {
+    unstable_rethrow(error);
+    redirect(`${profilePath(formData)}?error=${encodeURIComponent(toUserMessage(error))}`);
+  }
+  redirect(`${profilePath(formData)}?notice=Profile saved.`);
 }
 
 export async function passwordAction(formData: FormData) {
@@ -298,9 +318,9 @@ export async function passwordAction(formData: FormData) {
     await changePassword({ currentPassword: formData.get("currentPassword"), nextPassword: formData.get("nextPassword") });
   } catch (error) {
     unstable_rethrow(error);
-    redirect(`/employee/profile?error=${encodeURIComponent(toUserMessage(error))}`);
+    redirect(`${profilePath(formData)}?error=${encodeURIComponent(toUserMessage(error))}`);
   }
-  redirect("/employee/profile?notice=Password updated.");
+  redirect(`${profilePath(formData)}?notice=Password updated.`);
 }
 
 export async function readNotificationAction(formData: FormData) {

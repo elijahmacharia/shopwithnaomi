@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { centsToDecimalString, decimalToCents } from "@/lib/domain/money";
 import { grossProfitCents, netProfitCents } from "@/lib/domain/profit";
-import { buildSalesSeries, dateKeysEnding, nairobiDateKey, nairobiDayStart } from "@/lib/domain/sales-series";
+import { buildSalesSeries, dateKeysEnding, nairobiDateKey, nairobiDayStart, type SalesView } from "@/lib/domain/sales-series";
 
 function range(from?: string, to?: string) {
   const end = to ? new Date(to) : new Date();
@@ -74,9 +74,10 @@ export async function profitReport(query: { from?: string; to?: string; preset?:
   };
 }
 
-export async function salesSeries(days = 14) {
+export async function salesSeries(view: SalesView = "daily") {
   await requireUser(["OWNER"], "owner-dashboard");
-  const dayKeys = dateKeysEnding(nairobiDateKey(new Date()), days);
+  const span = view === "monthly" ? 180 : view === "weekly" ? 56 : 14;
+  const dayKeys = dateKeysEnding(nairobiDateKey(new Date()), span);
   const start = nairobiDayStart(dayKeys[0]);
   const rows = await prisma.$queryRaw<Array<{ day: string; revenue: string }>>(Prisma.sql`
     SELECT to_char(("createdAt" AT TIME ZONE 'Africa/Nairobi')::date, 'YYYY-MM-DD') AS day,
@@ -89,6 +90,7 @@ export async function salesSeries(days = 14) {
   return buildSalesSeries(
     rows.map((row) => ({ day: row.day, revenueCents: decimalToCents(row.revenue) })),
     dayKeys,
+    view,
   );
 }
 
@@ -106,10 +108,24 @@ export async function dashboardStats() {
     prisma.damageReport.count({ where: { status: "PENDING" } }),
     prisma.order.count({ where: { status: "NEW" } }),
   ]);
-  const low = await prisma.$queryRaw<Array<{ count: number }>>(Prisma.sql`
-    SELECT COUNT(*)::int AS count FROM "Product"
-    WHERE "archivedAt" IS NULL AND "stockQuantity" <= "minimumStock"
-  `);
+  const [low, lowItems, recentSales] = await Promise.all([
+    prisma.$queryRaw<Array<{ count: number }>>(Prisma.sql`
+      SELECT COUNT(*)::int AS count FROM "Product"
+      WHERE "archivedAt" IS NULL AND "stockQuantity" <= "minimumStock"
+    `),
+    prisma.$queryRaw<Array<{ id: string; name: string; stockQuantity: number; minimumStock: number }>>(Prisma.sql`
+      SELECT id, name, "stockQuantity", "minimumStock" FROM "Product"
+      WHERE "archivedAt" IS NULL AND "stockQuantity" <= "minimumStock"
+      ORDER BY "stockQuantity" ASC
+      LIMIT 5
+    `),
+    prisma.sale.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      include: { customer: true },
+    }),
+  ]);
+  const overdue = await prisma.creditRecord.count({ where: { status: "OVERDUE" } });
   const activity = await prisma.auditLog.findMany({
     orderBy: { createdAt: "desc" },
     take: 8,
@@ -123,6 +139,15 @@ export async function dashboardStats() {
     net: centsToDecimalString(month.net),
     credit: centsToDecimalString(credit._sum.balance ? decimalToCents(credit._sum.balance) : 0),
     lowStock: low[0]?.count ?? 0,
+    lowItems,
+    overdue,
+    recentSales: recentSales.map((sale) => ({
+      id: sale.id,
+      saleNumber: sale.saleNumber,
+      customer: sale.customer?.name ?? "Walk-in",
+      total: centsToDecimalString(decimalToCents(sale.total)),
+      status: sale.paymentStatus,
+    })),
     pendingPrices,
     pendingDamage,
     newOrders,
@@ -148,18 +173,39 @@ export async function employeeDashboard() {
       WHERE "archivedAt" IS NULL AND "isActive" = true AND "stockQuantity" <= "minimumStock"
     `),
   ]);
-  const recent = await prisma.sale.findMany({
-    where: { employeeId: actor.id },
-    orderBy: { createdAt: "desc" },
-    take: 6,
-    include: { customer: true },
-  });
+  const [recent, lowItems, damage, prices] = await Promise.all([
+    prisma.sale.findMany({
+      where: { employeeId: actor.id },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+      include: { customer: true },
+    }),
+    prisma.$queryRaw<Array<{ id: string; name: string; stockQuantity: number; minimumStock: number }>>(Prisma.sql`
+      SELECT id, name, "stockQuantity", "minimumStock" FROM "Product"
+      WHERE "archivedAt" IS NULL AND "isActive" = true AND "stockQuantity" <= "minimumStock"
+      ORDER BY "stockQuantity" ASC
+      LIMIT 5
+    `),
+    prisma.damageReport.findMany({
+      where: { reportedBy: actor.id },
+      orderBy: { createdAt: "desc" },
+      take: 4,
+      include: { product: true },
+    }),
+    prisma.priceChangeRequest.findMany({
+      where: { requestedBy: actor.id },
+      orderBy: { createdAt: "desc" },
+      take: 4,
+      include: { product: true },
+    }),
+  ]);
   return {
     name: actor.name,
     todaySales: centsToDecimalString(sales._sum.total ? decimalToCents(sales._sum.total) : 0),
     transactions: sales._count._all,
     credit,
     lowStock: low[0]?.count ?? 0,
+    lowItems,
     recent: recent.map((sale) => ({
       id: sale.id,
       saleNumber: sale.saleNumber,
@@ -167,6 +213,8 @@ export async function employeeDashboard() {
       customer: sale.customer?.name ?? "Walk-in",
       createdAt: sale.createdAt,
     })),
+    damage: damage.map((row) => ({ id: row.id, product: row.product.name, status: row.status, reviewNote: row.reviewNote })),
+    prices: prices.map((row) => ({ id: row.id, product: row.product.name, status: row.status, reviewNote: row.reviewNote })),
   };
 }
 

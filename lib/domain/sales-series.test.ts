@@ -19,6 +19,9 @@ describe("sales series", () => {
     assert.equal(series[0]?.revenue, 0);
     assert.equal(series.at(-1)?.day, salesDayLabel("2026-10-10"));
     assert.equal(series.at(-1)?.revenue, 4390);
+    const weekly = buildSalesSeries([{ day: "2026-10-10", revenueCents: 429000 }], days, "weekly");
+    assert.equal(weekly.at(-1)?.revenue, 4290);
+    assert.ok(weekly.length < 14);
   });
 
   it("labels a Nairobi calendar day without shifting it", () => {
