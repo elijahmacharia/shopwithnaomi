@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { AppError } from "@/lib/errors";
 import { decimalToCents, centsToDecimalString, marginPercent, profitPerUnitCents } from "@/lib/domain/money";
 import { slugify } from "@/lib/domain/slug";
+import { distinctHighlights } from "@/lib/domain/storefront-highlights";
 import { getPage } from "@/lib/pagination";
 import { z } from "zod";
 import { changeStock, money, writeAudit } from "./common";
@@ -134,13 +135,13 @@ export async function storefrontHighlights() {
   const popular = popularIds
     .map((id) => popularFound.find((product) => product.id === id))
     .filter((product): product is (typeof popularFound)[number] => Boolean(product))
-    .slice(0, 4)
     .map(toPublicProduct);
+  const rows = distinctHighlights(shelf.map(toPublicProduct), popular, newestRows.map(toPublicProduct));
   return {
     categories,
-    newest: newestRows.map(toPublicProduct),
-    popular,
-    shelf: shelf.map(toPublicProduct),
+    newest: rows.newest,
+    popular: rows.popular,
+    shelf: rows.shelf,
   };
 }
 
@@ -217,6 +218,7 @@ export async function getOwnerProduct(id: string) {
       priceHistory: { orderBy: { createdAt: "desc" }, take: 20, include: { user: true } },
       movements: { orderBy: { createdAt: "desc" }, take: 20, include: { user: true } },
       saleItems: { orderBy: { sale: { createdAt: "desc" } }, take: 20, include: { sale: true } },
+      _count: { select: { saleItems: true, movements: true, orderItems: true, damageReports: true, priceRequests: true, stockTakeItems: true } },
     },
   });
   if (!product) {
@@ -250,6 +252,7 @@ export async function getOwnerProduct(id: string) {
       by: row.user?.name ?? "System",
       createdAt: row.createdAt,
     })),
+    canDelete: Object.values(product._count).every((count) => count === 0),
     sales: product.saleItems.map((row) => ({
       id: row.id,
       saleNumber: row.sale.saleNumber,
@@ -374,6 +377,32 @@ export async function updateProduct(id: string, input: unknown) {
     uniqueMessage(error);
   }
   return { warning: selling < cost ? "Selling price is below cost." : undefined };
+}
+
+export async function deleteProduct(id: string) {
+  const actor = await requireUser(["OWNER"], "products");
+  const product = await prisma.product.findUnique({
+    where: { id },
+    include: { _count: { select: { saleItems: true, movements: true, orderItems: true, damageReports: true, priceRequests: true, stockTakeItems: true } } },
+  });
+  if (!product) {
+    throw new AppError("Product not found.");
+  }
+  const used = Object.values(product._count).some((count) => count > 0);
+  if (used) {
+    throw new AppError("This product has sales or stock history. Archive it instead so those records stay intact.");
+  }
+  await prisma.$transaction(async (tx) => {
+    await tx.productPriceHistory.deleteMany({ where: { productId: id } });
+    await tx.product.delete({ where: { id } });
+    await writeAudit(tx, {
+      userId: actor.id,
+      action: "product.deleted",
+      entityType: "product",
+      entityId: id,
+      description: `Owner deleted ${product.name}. It had no sales or stock history.`,
+    });
+  });
 }
 
 export async function archiveProduct(id: string) {

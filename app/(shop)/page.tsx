@@ -2,6 +2,7 @@ import Link from "next/link";
 import { DatabaseSetup } from "@/components/database-setup";
 import { ProductCard } from "@/components/shop/product-card";
 import { readStorefront } from "@/lib/read-storefront";
+import { publicBusiness } from "@/lib/domain/public-settings";
 import { storefrontHighlights } from "@/services/catalog";
 import { getSettings } from "@/services/settings";
 
@@ -10,7 +11,8 @@ export default async function HomePage() {
   if (!result.ok) {
     return <DatabaseSetup problem={result.problem} />;
   }
-  const [highlights, settings] = result.data;
+  const [highlights, stored] = result.data;
+  const settings = publicBusiness(stored);
   return (
     <div className="grid gap-16">
       <section className="grid items-end gap-8 border-b border-brand-soft pb-10 lg:grid-cols-[1.4fr_0.8fr]">
@@ -24,8 +26,8 @@ export default async function HomePage() {
         </div>
         <div className="rounded-2xl bg-white p-6 shadow-card">
           <p className="text-sm text-brand-muted">Open</p>
-          <p className="mt-1 font-display text-2xl">{settings.openingHours}</p>
-          <p className="mt-4 text-sm text-brand-muted">{settings.address}</p>
+          <p className="mt-1 font-display text-2xl">{settings.openingHours || "Hours are set by the shop"}</p>
+          {settings.address ? <p className="mt-4 text-sm text-brand-muted">{settings.address}</p> : <p className="mt-4 text-sm text-brand-muted">The shop has not published an address yet.</p>}
         </div>
       </section>
 
@@ -67,8 +69,8 @@ export default async function HomePage() {
       <section className="rounded-2xl bg-white p-6 shadow-card">
         <h2 className="font-display text-3xl">Contact {settings.businessName}</h2>
         <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
-          {settings.phone ? <p>Phone {settings.phone}</p> : null}
-          {settings.email ? <p>Email {settings.email}</p> : null}
+          {settings.phone ? <p>Phone {settings.phone}</p> : <p>Phone not published yet.</p>}
+          {settings.email ? <p>Email {settings.email}</p> : <p>Email not published yet.</p>}
           {settings.address ? <p>{settings.address}</p> : null}
           {settings.openingHours ? <p>{settings.openingHours}</p> : null}
         </div>

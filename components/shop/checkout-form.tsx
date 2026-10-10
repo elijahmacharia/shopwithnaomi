@@ -6,7 +6,7 @@ import { checkoutAction, loadProducts } from "@/actions/shop";
 import { formatKsh, parseMoneyToCents } from "@/lib/domain/money";
 import { useStore } from "./store-provider";
 
-export function CheckoutForm() {
+export function CheckoutForm({ instructions }: { instructions?: { delivery: string; pickup: string; payment: string } }) {
   const store = useStore();
   const router = useRouter();
   const [error, setError] = useState("");
@@ -68,9 +68,12 @@ export function CheckoutForm() {
       <label className="grid gap-1 text-sm">WhatsApp number<input name="whatsappPhone" required className="min-h-11 rounded-md border px-3" /></label>
       <label className="grid gap-1 text-sm">Email (optional)<input name="email" type="email" className="min-h-11 rounded-md border px-3" /></label>
       <fieldset className="flex gap-4">
-        <label><input type="radio" name="method" checked={method === "DELIVERY"} onChange={() => setMethod("DELIVERY")} /> Delivery</label>
-        <label><input type="radio" name="method" checked={method === "PICKUP"} onChange={() => setMethod("PICKUP")} /> Pickup</label>
+        <label><input type="radio" name="method" checked={method === "DELIVERY"} onChange={() => setMethod("DELIVERY")} /> Home delivery</label>
+        <label><input type="radio" name="method" checked={method === "PICKUP"} onChange={() => setMethod("PICKUP")} /> Shop pickup</label>
       </fieldset>
+      {method === "DELIVERY" && instructions?.delivery ? <p className="text-sm text-brand-muted">{instructions.delivery}</p> : null}
+      {method === "PICKUP" && instructions?.pickup ? <p className="text-sm text-brand-muted">{instructions.pickup}</p> : null}
+      {instructions?.payment ? <p className="text-sm text-brand-muted">{instructions.payment}</p> : null}
       {method === "DELIVERY" && <label className="grid gap-1 text-sm">Delivery address<input name="address" required className="min-h-11 rounded-md border px-3" /></label>}
       <label className="grid gap-1 text-sm">Landmark<input name="landmark" className="min-h-11 rounded-md border px-3" /></label>
       <label className="grid gap-1 text-sm">Notes<textarea name="notes" className="min-h-24 rounded-md border px-3 py-2" /></label>
