@@ -19,7 +19,10 @@ export function DatabaseSetup({ problem }: { problem: DatabaseProblem }) {
           <p className="mt-3">On Vercel, open the project, then Settings, then Environment Variables. Add these, then redeploy:</p>
           <ul className="mt-3 list-disc space-y-2 pl-5">
             <li>
-              <span className="font-semibold">DATABASE_URL</span> — the hosted Postgres connection string. Use port 5432 and add <span className="font-semibold">?sslmode=require&connection_limit=1</span>. Do not use localhost.
+              <span className="font-semibold">DATABASE_URL</span> — Supabase transaction pooler, port 6543, ending in <span className="font-semibold">?pgbouncer=true&connection_limit=1&sslmode=require</span>.
+            </li>
+            <li>
+              <span className="font-semibold">DIRECT_URL</span> — Supabase session pooler, port 5432, ending in <span className="font-semibold">?sslmode=require</span>. Migrations use this connection.
             </li>
             <li>
               <span className="font-semibold">SESSION_SECRET</span> — a long random string, at least 16 characters.

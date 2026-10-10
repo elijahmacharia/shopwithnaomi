@@ -5,6 +5,7 @@ import { databaseProblem } from "./database-problem";
 describe("database problems", () => {
   it("recognises a missing connection string", () => {
     assert.equal(databaseProblem(new Error("Environment variable not found: DATABASE_URL.")), "missing-url");
+    assert.equal(databaseProblem(new Error("Environment variable not found: DIRECT_URL.")), "missing-url");
   });
 
   it("recognises a localhost database from a deployed server", () => {
